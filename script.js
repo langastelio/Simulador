@@ -22,6 +22,9 @@ const taxaPadraoDisplay = document.getElementById('taxaPadrao');
 
 
 const IRPS = 0.10;
+// Limites de sanidade para a taxa negociada (taxa anual em %).
+const TAXA_NEGOCIADA_MAX = 100;    // acima disto é certamente um erro de digitação -> rejeita
+const TAXA_NEGOCIADA_ALERTA = 20;  // acima disto é invulgar -> pede confirmação
 const taxaPorMoeda = {
   MZN: { 30: 3.15, 90: 3.15, 180: 3.15, 365: 3.15 },
   USD: { 30: 1.77, 90: 1.77, 180: 1.77, 365: 1.77 },
@@ -75,6 +78,23 @@ function calcularSimulacao() {
   if (capital <= 0 || prazo <= 0 || taxa <= 0) {
     alert('Informe valores válidos para capital, prazo e taxa.');
     return;
+  }
+
+  if (tipoJuros === 'negociado') {
+    if (taxa > TAXA_NEGOCIADA_MAX) {
+      alert(
+        `A taxa negociada de ${taxa.toFixed(2)}% parece inválida. ` +
+        `Indique uma taxa anual até ${TAXA_NEGOCIADA_MAX}%.`
+      );
+      return;
+    }
+    if (taxa > TAXA_NEGOCIADA_ALERTA) {
+      const confirmar = confirm(
+        `A taxa negociada de ${taxa.toFixed(2)}% é invulgarmente elevada. ` +
+        `Confirma que está correta?`
+      );
+      if (!confirmar) return;
+    }
   }
 
   const reutilizar = reutilizarJurosCheckbox.checked;
