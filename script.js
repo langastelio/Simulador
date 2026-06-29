@@ -90,10 +90,15 @@ function calcularSimulacao() {
 
   for (let mes = 1; mes <= meses; mes++) {
     const saldoInicial = saldo;
-    const bruto = saldoInicial * taxaDiaria * diasPorMes;
+    // Base sobre a qual os juros incidem: no juro composto cresce com o saldo;
+    // no juro simples mantém-se sempre o capital inicial.
+    const baseJuros = reutilizar ? saldoInicial : capital;
+    const bruto = baseJuros * taxaDiaria * diasPorMes;
     const imposto = bruto * IRPS;
     const liquido = bruto - imposto;
-    const saldoFinal = reutilizar ? saldoInicial + liquido : saldoInicial;
+    // O saldo acumula sempre os juros líquidos do mês, mesmo no juro simples,
+    // para que a coluna "Saldo Final" reflita o montante acumulado.
+    const saldoFinal = saldoInicial + liquido;
 
     totalBruto += bruto;
     totalImposto += imposto;
@@ -110,12 +115,12 @@ function calcularSimulacao() {
       </tr>
     `;
 
-    saldo = reutilizar ? saldoFinal : capital;
+    saldo = saldoFinal;
   }
 
   tabelaBody.innerHTML = tabelaHTML;
 
-  const montanteFinal = reutilizar ? saldo : capital + totalLiquido;
+  const montanteFinal = saldo;
 
   resCapital.textContent = formatValue(capital, moeda);
   resTaxa.textContent = `${taxa.toFixed(2)}%`;
