@@ -1,0 +1,148 @@
+const capitalInput = document.getElementById('capital');
+const moedaSelect = document.getElementById('moeda');
+const prazoSelect = document.getElementById('prazo');
+const tipoJurosSelect = document.getElementById('tipoJuros');
+const taxaNegociadaInput = document.getElementById('taxaNegociada');
+const printLogo = document.getElementById('printLogo');
+const printCompanyName = document.getElementById('printCompanyName');
+const reutilizarJurosCheckbox = document.getElementById('reutilizarJuros');
+const calcularBtn = document.getElementById('calcularBtn');
+const imprimirBtn = document.getElementById('imprimirBtn');
+const tabelaBody = document.querySelector('#tabelaResultados tbody');
+const resCapital = document.getElementById('resCapital');
+const resTaxa = document.getElementById('resTaxa');
+const resIrps = document.getElementById('resIrps');
+const resJurosBruto = document.getElementById('resJurosBruto');
+const resImposto = document.getElementById('resImposto');
+const resJurosLiquido = document.getElementById('resJurosLiquido');
+const resMontante = document.getElementById('resMontante');
+const campoPadraoContainer = document.getElementById('campoPadraoContainer');
+const campoNegociadoContainer = document.getElementById('campoNegociadoContainer');
+const taxaPadraoDisplay = document.getElementById('taxaPadrao');
+
+
+const IRPS = 0.10;
+const taxaPorMoeda = {
+  MZN: { 30: 3.15, 90: 3.15, 180: 3.15, 365: 3.15 },
+  USD: { 30: 1.77, 90: 1.77, 180: 1.77, 365: 1.77 },
+  ZAR: { 30: 3.72, 90: 3.72, 180: 3.72, 365: 3.72 },
+  EUR: { 30: 0.69, 90: 0.69, 180: 0.69, 365: 0.69 },
+  GBP: { 30: 0.28, 90: 0.28, 180: 0.28, 365: 0.28 }
+};
+
+function formatValue(value, currency) {
+  try {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency });
+  } catch {
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+}
+
+function getTaxa(moeda, prazo) {
+  return taxaPorMoeda[moeda]?.[prazo] ?? 0;
+}
+
+function atualizarVisibilidadeTaxa() {
+  const tipoJuros = tipoJurosSelect.value;
+  if (tipoJuros === 'padrao') {
+    campoPadraoContainer.style.display = 'block';
+    campoNegociadoContainer.style.display = 'none';
+    atualizarTaxaPadrao();
+  } else {
+    campoPadraoContainer.style.display = 'none';
+    campoNegociadoContainer.style.display = 'block';
+  }
+}
+
+function atualizarTaxaPadrao() {
+  const moeda = moedaSelect.value;
+  const prazo = Number(prazoSelect.value);
+  const taxa = getTaxa(moeda, prazo);
+  taxaPadraoDisplay.textContent = `${taxa.toFixed(2)}%`;
+}
+
+
+function calcularSimulacao() {
+  const capital = Number(capitalInput.value) || 0;
+  const moeda = moedaSelect.value;
+  const prazo = Number(prazoSelect.value);
+  const tipoJuros = tipoJurosSelect.value;
+  
+  let taxa = tipoJuros === 'padrao' 
+    ? getTaxa(moeda, prazo)
+    : Number(taxaNegociadaInput.value) || 0;
+
+  if (capital <= 0 || prazo <= 0 || taxa <= 0) {
+    alert('Informe valores válidos para capital, prazo e taxa.');
+    return;
+  }
+
+  const reutilizar = reutilizarJurosCheckbox.checked;
+  const meses = prazo === 365 ? 12 : prazo / 30;
+  const diasPorMes = prazo / meses;
+  const taxaDiaria = taxa / 100 / 365;
+
+  let tabelaHTML = '';
+  let saldo = capital;
+  let totalBruto = 0;
+  let totalImposto = 0;
+  let totalLiquido = 0;
+
+  for (let mes = 1; mes <= meses; mes++) {
+    const saldoInicial = saldo;
+    const bruto = saldoInicial * taxaDiaria * diasPorMes;
+    const imposto = bruto * IRPS;
+    const liquido = bruto - imposto;
+    const saldoFinal = reutilizar ? saldoInicial + liquido : saldoInicial;
+
+    totalBruto += bruto;
+    totalImposto += imposto;
+    totalLiquido += liquido;
+
+    tabelaHTML += `
+      <tr>
+        <td>${mes}</td>
+        <td>${formatValue(saldoInicial, moeda)}</td>
+        <td>${formatValue(bruto, moeda)}</td>
+        <td>${formatValue(imposto, moeda)}</td>
+        <td>${formatValue(liquido, moeda)}</td>
+        <td>${formatValue(saldoFinal, moeda)}</td>
+      </tr>
+    `;
+
+    saldo = reutilizar ? saldoFinal : capital;
+  }
+
+  tabelaBody.innerHTML = tabelaHTML;
+
+  const montanteFinal = reutilizar ? saldo : capital + totalLiquido;
+
+  resCapital.textContent = formatValue(capital, moeda);
+  resTaxa.textContent = `${taxa.toFixed(2)}%`;
+  resIrps.textContent = `${(IRPS * 100).toFixed(0)}%`;
+  resJurosBruto.textContent = formatValue(totalBruto, moeda);
+  resImposto.textContent = formatValue(totalImposto, moeda);
+  resJurosLiquido.textContent = formatValue(totalLiquido, moeda);
+  resMontante.textContent = formatValue(montanteFinal, moeda);
+}
+
+function renderInitialState() {
+  const moeda = moedaSelect.value || 'MZN';
+  tabelaBody.innerHTML = '';
+  resCapital.textContent = formatValue(0, moeda);
+  resTaxa.textContent = '0,00%';
+  resIrps.textContent = '10%';
+  resJurosBruto.textContent = formatValue(0, moeda);
+  resImposto.textContent = formatValue(0, moeda);
+  resJurosLiquido.textContent = formatValue(0, moeda);
+  resMontante.textContent = formatValue(0, moeda);
+  atualizarTaxaPadrao();
+}
+
+calcularBtn.addEventListener('click', calcularSimulacao);
+imprimirBtn.addEventListener('click', () => window.print());
+moedaSelect.addEventListener('change', atualizarTaxaPadrao);
+prazoSelect.addEventListener('change', atualizarTaxaPadrao);
+tipoJurosSelect.addEventListener('change', atualizarVisibilidadeTaxa);
+
+renderInitialState();

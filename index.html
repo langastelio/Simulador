@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Depósito a Prazo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Simulador de Depósito a Prazo</h1>
+    <div class="steps">
+      <div class="step">
+        <div class="step-circle">1</div>
+        <div class="step-label">Dados do Depósito a Prazo</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <div class="step-label">Resultados</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="print-header" id="printHeader">
+    <img id="printLogo" src="Untitled.png" alt="Logo da empresa" />
+    <div class="print-company">
+      <div class="print-company-name" id="printCompanyName">Standard Bank Moçambique</div>
+      <div class="print-company-tag">Simulação de Depósito a Prazo</div>
+    </div>
+  </div>
+
+  <main>
+    <section class="form-section form-group" id="passo1">
+      <h2>Dados do Depósito a Prazo</h2>
+      <div class="grid">
+        <div>
+          <label for="capital">Capital Inicial</label>
+          <input type="number" id="capital" value="0" min="0" step="100" />
+        </div>
+        <div>
+          <label for="moeda">Moeda</label>
+          <select id="moeda">
+            <option value="MZN">MZN</option>
+            <option value="USD">USD</option>
+            <option value="ZAR">ZAR</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+        <div>
+          <label for="prazo">Prazo (dias)</label>
+          <select id="prazo">
+            <option value="30">30</option>
+            <option value="90">90</option>
+            <option value="180">180</option>
+            <option value="365">365</option>
+          </select>
+        </div>
+        <div>
+          <label for="tipoJuros">Tipo de Juros</label>
+          <select id="tipoJuros">
+            <option value="padrao">Taxa Padrão</option>
+            <option value="negociado">Juros Negociado</option>
+          </select>
+        </div>
+        <div id="campoPadraoContainer">
+          <label for="taxaPadrao" style="color: #999; font-size: 0.9rem;">Taxa Aplicada</label>
+          <div style="background: #f5f5f5; padding: 12px 14px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; color: #333;" id="taxaPadrao">0,00%</div>
+        </div>
+        <div id="campoNegociadoContainer" style="display: none;">
+          <label for="taxaNegociada">Taxa de Juros Negociada (%)</label>
+          <input type="number" id="taxaNegociada" value="0" min="0" step="0.01" placeholder="Digite a taxa negociada" />
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="reutilizarJuros" />
+          <label for="reutilizarJuros">Capitalizar os Juros</label>
+        </div>
+      </div>
+      <div class="button-group">
+        <button id="calcularBtn">Calcular</button>
+        <button id="imprimirBtn">Imprimir</button>
+      </div>
+    </section>
+
+    <section id="passo2" class="resultado-section">
+      <h2>Resultados</h2>
+      <div class="summary">
+        <div class="summary-item">
+          <strong>Valor Inicial</strong>
+          <span id="resCapital">0,00</span>
+        </div>
+        <div class="summary-item">
+          <strong>Taxa Aplicada</strong>
+          <span id="resTaxa">0,00%</span>
+        </div>
+        <div class="summary-item">
+          <strong>IRPS</strong>
+          <span id="resIrps">10%</span>
+        </div>
+        <div class="summary-item">
+          <strong>Juros Bruto</strong>
+          <span id="resJurosBruto">0,00</span>
+        </div>
+        <div class="summary-item">
+          <strong>Imposto</strong>
+          <span id="resImposto">0,00</span>
+        </div>
+        <div class="summary-item">
+          <strong>Juros Líquidos</strong>
+          <span id="resJurosLiquido">0,00</span>
+        </div>
+        <div class="summary-item">
+          <strong>Montante Final</strong>
+          <span id="resMontante">0,00</span>
+        </div>
+      </div>
+
+      <table id="tabelaResultados">
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Saldo Inicial</th>
+            <th>Juros Bruto</th>
+            <th>Imposto</th>
+            <th>Juros Líquidos</th>
+            <th>Saldo Final</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
