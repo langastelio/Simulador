@@ -30,6 +30,8 @@ const printRef = document.getElementById('printRef');
 
 // Indica se o painel de resultados reflete uma simulação já calculada.
 let temResultado = false;
+// Dados estruturados da última simulação calculada (para gerar o PDF).
+let ultimaSimulacao = null;
 
 
 // Localização: português de Portugal/Moçambique (separador decimal vírgula).
@@ -139,11 +141,156 @@ function construirMensagemWhatsApp() {
   ].join('\n');
 }
 
-// Abre o WhatsApp com o resumo da simulação pré-preenchido (o utilizador escolhe o destinatário).
-function enviarWhatsApp() {
-  if (!temResultado || resultadoSection.classList.contains('stale')) return;
-  const url = 'https://wa.me/?text=' + encodeURIComponent(construirMensagemWhatsApp());
-  window.open(url, '_blank', 'noopener');
+// Gera o PDF da última simulação calculada e devolve o documento jsPDF.
+function gerarPdfSimulacao() {
+  const s = ultimaSimulacao;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 40;
+  const azul = [0, 82, 204];
+
+  // Marca de água "CONFIDENCIAL" (desenhada primeiro, por baixo do conteúdo).
+  doc.saveGraphicsState();
+  try { doc.setGState(new doc.GState({ opacity: 0.08 })); } catch (e) { /* sem suporte a opacidade */ }
+  doc.setTextColor(...azul);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(70);
+  doc.text('CONFIDENCIAL', pageW / 2, pageH / 2, { align: 'center', angle: 35 });
+  doc.restoreGraphicsState();
+
+  // Cabeçalho com a marca.
+  doc.setFillColor(...azul);
+  doc.rect(0, 0, pageW, 72, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Standard Bank Moçambique', margin, 34);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.text('Simulação de Depósito a Prazo', margin, 52);
+  doc.setFontSize(9);
+  doc.text(`Referência: ${s.ref}`, pageW - margin, 32, { align: 'right' });
+  doc.text(`Data: ${s.data}`, pageW - margin, 46, { align: 'right' });
+
+  // Resumo (pares rótulo/valor).
+  doc.setTextColor(0, 0, 0);
+  let y = 104;
+  const resumo = [
+    ['Capital inicial', formatValue(s.capital, s.moeda)],
+    ['Moeda', s.moeda],
+    ['Prazo', `${s.prazo} dias`],
+    ['Taxa aplicada', formatPercent(s.taxa)],
+    ['Tipo de juros', s.tipo],
+    ['Capitalização dos juros', s.capitaliza],
+    ['Juros bruto', formatValue(s.totalBruto, s.moeda)],
+    ['Imposto (IRPS ' + formatPercent(IRPS * 100, 0) + ')', formatValue(s.totalImposto, s.moeda)],
+    ['Juros líquidos', formatValue(s.totalLiquido, s.moeda)],
+    ['Montante final', formatValue(s.montanteFinal, s.moeda)],
+  ];
+  doc.setFontSize(10);
+  resumo.forEach(([rotulo, valor]) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(90, 90, 90);
+    doc.text(rotulo, margin, y);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(String(valor), pageW - margin, y, { align: 'right' });
+    y += 18;
+  });
+
+  // Tabela mês a mês.
+  y += 12;
+  const colunas = [
+    { titulo: 'Mês', largura: 35, align: 'left' },
+    { titulo: 'Saldo Inicial', largura: 100, align: 'right' },
+    { titulo: 'Juros Bruto', largura: 95, align: 'right' },
+    { titulo: 'Imposto', largura: 90, align: 'right' },
+    { titulo: 'Juros Líquidos', largura: 100, align: 'right' },
+    { titulo: 'Saldo Final', largura: 95, align: 'right' },
+  ];
+  const startX = margin;
+
+  function desenharLinha(celulas, yLinha, opcoes = {}) {
+    let x = startX;
+    colunas.forEach((col, i) => {
+      const tx = col.align === 'right' ? x + col.largura - 4 : x + 4;
+      doc.text(String(celulas[i]), tx, yLinha, { align: col.align });
+      x += col.largura;
+    });
+  }
+
+  // Cabeçalho da tabela.
+  const tabelaW = colunas.reduce((soma, c) => soma + c.largura, 0);
+  doc.setFillColor(...azul);
+  doc.rect(startX, y - 12, tabelaW, 18, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  desenharLinha(colunas.map((c) => c.titulo), y);
+  y += 16;
+
+  // Linhas de dados.
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  s.linhas.forEach((l, idx) => {
+    if (y > pageH - margin) {
+      doc.addPage();
+      y = margin + 10;
+    }
+    if (idx % 2 === 0) {
+      doc.setFillColor(240, 244, 252);
+      doc.rect(startX, y - 11, tabelaW, 16, 'F');
+    }
+    desenharLinha([
+      l.mes,
+      formatValue(l.saldoInicial, s.moeda),
+      formatValue(l.bruto, s.moeda),
+      formatValue(l.imposto, s.moeda),
+      formatValue(l.liquido, s.moeda),
+      formatValue(l.saldoFinal, s.moeda),
+    ], y);
+    y += 16;
+  });
+
+  return doc;
+}
+
+// Gera o PDF da simulação e partilha-o via WhatsApp (Web Share API).
+// Em plataformas sem partilha de ficheiros, descarrega o PDF e abre o WhatsApp com o resumo em texto.
+async function enviarPdfWhatsApp() {
+  if (!temResultado || resultadoSection.classList.contains('stale') || !ultimaSimulacao) return;
+
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    // Biblioteca de PDF indisponível: recorre ao envio de texto.
+    window.open('https://wa.me/?text=' + encodeURIComponent(construirMensagemWhatsApp()), '_blank', 'noopener');
+    return;
+  }
+
+  const doc = gerarPdfSimulacao();
+  const blob = doc.output('blob');
+  const nomeFicheiro = `simulacao-${ultimaSimulacao.ref || 'deposito'}.pdf`;
+  const ficheiro = new File([blob], nomeFicheiro, { type: 'application/pdf' });
+
+  // Partilha nativa do ficheiro (mostra o WhatsApp como destino em telemóveis).
+  if (navigator.canShare && navigator.canShare({ files: [ficheiro] })) {
+    try {
+      await navigator.share({
+        files: [ficheiro],
+        title: 'Simulação de Depósito a Prazo',
+        text: 'Simulação de Depósito a Prazo — Standard Bank Moçambique',
+      });
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // utilizador cancelou
+      // Caso contrário, continua para o plano alternativo.
+    }
+  }
+
+  // Alternativa (ex.: computador): descarrega o PDF e abre o WhatsApp com o texto.
+  doc.save(nomeFicheiro);
+  window.open('https://wa.me/?text=' + encodeURIComponent(construirMensagemWhatsApp()), '_blank', 'noopener');
 }
 
 function atualizarVisibilidadeTaxa() {
@@ -219,6 +366,7 @@ function calcularSimulacao() {
   let totalBruto = 0;
   let totalImposto = 0;
   let totalLiquido = 0;
+  const linhas = [];
 
   for (let mes = 1; mes <= meses; mes++) {
     const saldoInicial = saldo;
@@ -235,6 +383,7 @@ function calcularSimulacao() {
     totalBruto += bruto;
     totalImposto += imposto;
     totalLiquido += liquido;
+    linhas.push({ mes, saldoInicial, bruto, imposto, liquido, saldoFinal });
 
     tabelaHTML += `
       <tr>
@@ -264,8 +413,19 @@ function calcularSimulacao() {
 
   // Carimba a data e a referência da simulação para o documento impresso.
   const agora = new Date();
-  printData.textContent = formatarDataHora(agora);
-  printRef.textContent = gerarReferencia(agora);
+  const dataTexto = formatarDataHora(agora);
+  const refTexto = gerarReferencia(agora);
+  printData.textContent = dataTexto;
+  printRef.textContent = refTexto;
+
+  // Guarda a simulação estruturada para gerar o PDF.
+  ultimaSimulacao = {
+    moeda, prazo, taxa,
+    tipo: tipoJuros === 'negociado' ? 'Negociado' : 'Padrão',
+    capitaliza: reutilizar ? 'Sim' : 'Não',
+    capital, totalBruto, totalImposto, totalLiquido, montanteFinal,
+    data: dataTexto, ref: refTexto, linhas,
+  };
 
   // Resultados agora refletem as entradas atuais.
   temResultado = true;
@@ -299,6 +459,7 @@ function limparSimulacao() {
   renderInitialState();
 
   temResultado = false;
+  ultimaSimulacao = null;
   resultadoSection.classList.remove('stale');
   definirAcoesAtivas(false, 'Calcule uma simulação antes de continuar.');
 }
@@ -310,7 +471,7 @@ imprimirBtn.addEventListener('click', () => {
   if (!temResultado || resultadoSection.classList.contains('stale')) return;
   window.print();
 });
-whatsappBtn.addEventListener('click', enviarWhatsApp);
+whatsappBtn.addEventListener('click', enviarPdfWhatsApp);
 moedaSelect.addEventListener('change', atualizarTaxaPadrao);
 prazoSelect.addEventListener('change', atualizarTaxaPadrao);
 tipoJurosSelect.addEventListener('change', atualizarVisibilidadeTaxa);

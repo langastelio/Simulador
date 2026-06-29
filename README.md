@@ -1,8 +1,9 @@
 # Simulador de Depósito a Prazo
 
 Simulador web de depósitos a prazo para o **Standard Bank Moçambique**. Aplicação
-estática (sem dependências nem build) que calcula juros, imposto (IRPS) e montante
-final de um depósito, com vista de impressão marcada como confidencial.
+estática (sem passo de build) que calcula juros, imposto (IRPS) e montante final de
+um depósito, com vista de impressão marcada como confidencial. A geração do PDF usa
+a biblioteca [jsPDF](https://github.com/parallax/jsPDF), carregada por CDN.
 
 ## Funcionalidades
 
@@ -12,6 +13,8 @@ final de um depósito, com vista de impressão marcada como confidencial.
 - Retenção de IRPS de 10% sobre os juros brutos.
 - Tabela mês a mês e resumo dos resultados.
 - Vista de impressão com cabeçalho da marca e marca de água "CONFIDENCIAL".
+- Exportação da simulação em PDF e partilha via WhatsApp (partilha nativa do
+  dispositivo; em computador, descarrega o PDF e abre o WhatsApp com o resumo).
 
 ## Utilização
 
