@@ -32,7 +32,7 @@ const taxaPorMoeda = {
 
 function formatValue(value, currency) {
   try {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency });
+    return value.toLocaleString('pt-BR', { style: 'currency', currency, currencyDisplay: 'code' });
   } catch {
     return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
