@@ -9,6 +9,7 @@ const reutilizarJurosCheckbox = document.getElementById('reutilizarJuros');
 const calcularBtn = document.getElementById('calcularBtn');
 const limparBtn = document.getElementById('limparBtn');
 const imprimirBtn = document.getElementById('imprimirBtn');
+const whatsappBtn = document.getElementById('whatsappBtn');
 const tabelaBody = document.querySelector('#tabelaResultados tbody');
 const resCapital = document.getElementById('resCapital');
 const resTaxa = document.getElementById('resTaxa');
@@ -95,15 +96,54 @@ function limparMensagens() {
   setFieldMessage(erroTaxaNegociada, taxaNegociadaInput, '', '');
 }
 
+// Ativa/desativa as ações que dependem de resultados atuais (imprimir e WhatsApp).
+function definirAcoesAtivas(ativas, titulo) {
+  [imprimirBtn, whatsappBtn].forEach((btn) => {
+    btn.disabled = !ativas;
+    btn.title = titulo;
+  });
+}
+
 // Marca os resultados como desatualizados quando uma entrada muda após um cálculo.
-// Enquanto estiverem desatualizados, a impressão fica bloqueada para evitar
-// gerar um documento com números que já não correspondem ao formulário.
+// Enquanto estiverem desatualizados, imprimir/enviar fica bloqueado para evitar
+// partilhar números que já não correspondem ao formulário.
 function marcarDesatualizado() {
   if (temResultado) {
     resultadoSection.classList.add('stale');
-    imprimirBtn.disabled = true;
-    imprimirBtn.title = 'Os dados mudaram. Recalcule antes de imprimir.';
+    definirAcoesAtivas(false, 'Os dados mudaram. Recalcule antes de continuar.');
   }
+}
+
+// Resumo em texto da simulação atual para partilha.
+function construirMensagemWhatsApp() {
+  const tipo = tipoJurosSelect.value === 'negociado' ? 'Negociado' : 'Padrão';
+  const capitaliza = reutilizarJurosCheckbox.checked ? 'Sim' : 'Não';
+  return [
+    '*Simulação de Depósito a Prazo*',
+    'Standard Bank Moçambique',
+    '',
+    `Referência: ${printRef.textContent}`,
+    `Data: ${printData.textContent}`,
+    '',
+    `Capital inicial: ${resCapital.textContent}`,
+    `Moeda: ${moedaSelect.value}`,
+    `Prazo: ${prazoSelect.value} dias`,
+    `Taxa aplicada: ${resTaxa.textContent}`,
+    `Tipo de juros: ${tipo}`,
+    `Capitalização dos juros: ${capitaliza}`,
+    '',
+    `Juros bruto: ${resJurosBruto.textContent}`,
+    `Imposto (IRPS ${resIrps.textContent}): ${resImposto.textContent}`,
+    `Juros líquidos: ${resJurosLiquido.textContent}`,
+    `Montante final: ${resMontante.textContent}`,
+  ].join('\n');
+}
+
+// Abre o WhatsApp com o resumo da simulação pré-preenchido (o utilizador escolhe o destinatário).
+function enviarWhatsApp() {
+  if (!temResultado || resultadoSection.classList.contains('stale')) return;
+  const url = 'https://wa.me/?text=' + encodeURIComponent(construirMensagemWhatsApp());
+  window.open(url, '_blank', 'noopener');
 }
 
 function atualizarVisibilidadeTaxa() {
@@ -230,8 +270,7 @@ function calcularSimulacao() {
   // Resultados agora refletem as entradas atuais.
   temResultado = true;
   resultadoSection.classList.remove('stale');
-  imprimirBtn.disabled = false;
-  imprimirBtn.title = '';
+  definirAcoesAtivas(true, '');
 }
 
 function renderInitialState() {
@@ -261,8 +300,7 @@ function limparSimulacao() {
 
   temResultado = false;
   resultadoSection.classList.remove('stale');
-  imprimirBtn.disabled = true;
-  imprimirBtn.title = 'Calcule uma simulação antes de imprimir.';
+  definirAcoesAtivas(false, 'Calcule uma simulação antes de continuar.');
 }
 
 calcularBtn.addEventListener('click', calcularSimulacao);
@@ -272,6 +310,7 @@ imprimirBtn.addEventListener('click', () => {
   if (!temResultado || resultadoSection.classList.contains('stale')) return;
   window.print();
 });
+whatsappBtn.addEventListener('click', enviarWhatsApp);
 moedaSelect.addEventListener('change', atualizarTaxaPadrao);
 prazoSelect.addEventListener('change', atualizarTaxaPadrao);
 tipoJurosSelect.addEventListener('change', atualizarVisibilidadeTaxa);
