@@ -30,6 +30,10 @@ const printRef = document.getElementById('printRef');
 let temResultado = false;
 
 
+// Localização: português de Portugal/Moçambique (separador decimal vírgula).
+// Trocar para 'pt-MZ' aqui caso se pretenda esse identificador.
+const LOCALE = 'pt-PT';
+
 const IRPS = 0.10;
 // Limites de sanidade para a taxa negociada (taxa anual em %).
 const TAXA_NEGOCIADA_MAX = 100;    // acima disto é certamente um erro de digitação -> rejeita
@@ -44,10 +48,15 @@ const taxaPorMoeda = {
 
 function formatValue(value, currency) {
   try {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency, currencyDisplay: 'code' });
+    return value.toLocaleString(LOCALE, { style: 'currency', currency, currencyDisplay: 'code' });
   } catch {
-    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return value.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
+}
+
+// Percentagem com o separador decimal da localização (ex.: 3,15%).
+function formatPercent(value, casas = 2) {
+  return value.toLocaleString(LOCALE, { minimumFractionDigits: casas, maximumFractionDigits: casas }) + '%';
 }
 
 function getTaxa(moeda, prazo) {
@@ -113,7 +122,7 @@ function atualizarTaxaPadrao() {
   const moeda = moedaSelect.value;
   const prazo = Number(prazoSelect.value);
   const taxa = getTaxa(moeda, prazo);
-  taxaPadraoDisplay.textContent = `${taxa.toFixed(2)}%`;
+  taxaPadraoDisplay.textContent = formatPercent(taxa);
 }
 
 
@@ -155,7 +164,7 @@ function calcularSimulacao() {
   if (tipoJuros === 'negociado' && taxa > TAXA_NEGOCIADA_ALERTA) {
     setFieldMessage(
       erroTaxaNegociada, taxaNegociadaInput,
-      `Taxa invulgarmente elevada (${taxa.toFixed(2)}%). Verifique se está correta.`, 'aviso'
+      `Taxa invulgarmente elevada (${formatPercent(taxa)}). Verifique se está correta.`, 'aviso'
     );
   }
 
@@ -205,8 +214,8 @@ function calcularSimulacao() {
   const montanteFinal = saldo;
 
   resCapital.textContent = formatValue(capital, moeda);
-  resTaxa.textContent = `${taxa.toFixed(2)}%`;
-  resIrps.textContent = `${(IRPS * 100).toFixed(0)}%`;
+  resTaxa.textContent = formatPercent(taxa);
+  resIrps.textContent = formatPercent(IRPS * 100, 0);
   resJurosBruto.textContent = formatValue(totalBruto, moeda);
   resImposto.textContent = formatValue(totalImposto, moeda);
   resJurosLiquido.textContent = formatValue(totalLiquido, moeda);
@@ -228,8 +237,8 @@ function renderInitialState() {
   const moeda = moedaSelect.value || 'MZN';
   tabelaBody.innerHTML = '';
   resCapital.textContent = formatValue(0, moeda);
-  resTaxa.textContent = '0,00%';
-  resIrps.textContent = '10%';
+  resTaxa.textContent = formatPercent(0);
+  resIrps.textContent = formatPercent(IRPS * 100, 0);
   resJurosBruto.textContent = formatValue(0, moeda);
   resImposto.textContent = formatValue(0, moeda);
   resJurosLiquido.textContent = formatValue(0, moeda);
