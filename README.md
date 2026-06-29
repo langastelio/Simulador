@@ -25,4 +25,4 @@ nem instalação.
 | `index.html`  | Estrutura da página e formulário.          |
 | `style.css`   | Estilos e regras de impressão.             |
 | `script.js`   | Lógica de cálculo da simulação.            |
-| `Untitled.png`| Logótipo usado no cabeçalho de impressão.  |
+| `logo-standard-bank.png` | Logótipo usado no cabeçalho de impressão. |

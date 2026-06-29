@@ -7,6 +7,7 @@ const printLogo = document.getElementById('printLogo');
 const printCompanyName = document.getElementById('printCompanyName');
 const reutilizarJurosCheckbox = document.getElementById('reutilizarJuros');
 const calcularBtn = document.getElementById('calcularBtn');
+const limparBtn = document.getElementById('limparBtn');
 const imprimirBtn = document.getElementById('imprimirBtn');
 const tabelaBody = document.querySelector('#tabelaResultados tbody');
 const resCapital = document.getElementById('resCapital');
@@ -246,7 +247,26 @@ function renderInitialState() {
   atualizarTaxaPadrao();
 }
 
+// Repõe o formulário e os resultados no estado inicial, sem recarregar a página.
+function limparSimulacao() {
+  capitalInput.value = '0';
+  moedaSelect.value = 'MZN';
+  prazoSelect.value = '30';
+  tipoJurosSelect.value = 'padrao';
+  taxaNegociadaInput.value = '0';
+  reutilizarJurosCheckbox.checked = false;
+
+  atualizarVisibilidadeTaxa();
+  renderInitialState();
+
+  temResultado = false;
+  resultadoSection.classList.remove('stale');
+  imprimirBtn.disabled = true;
+  imprimirBtn.title = 'Calcule uma simulação antes de imprimir.';
+}
+
 calcularBtn.addEventListener('click', calcularSimulacao);
+limparBtn.addEventListener('click', limparSimulacao);
 imprimirBtn.addEventListener('click', () => {
   // Só imprime resultados calculados e atualizados.
   if (!temResultado || resultadoSection.classList.contains('stale')) return;
