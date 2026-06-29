@@ -239,6 +239,18 @@ button:hover {
   box-shadow: 0 10px 25px rgba(0, 82, 204, 0.3);
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background: white;
+  color: #0052CC;
+  transform: none;
+  box-shadow: none;
+}
+
 .resultado-section {
   background: rgba(255, 255, 255, 0.95);
   padding: 30px;

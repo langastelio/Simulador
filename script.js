@@ -69,9 +69,13 @@ function limparMensagens() {
 }
 
 // Marca os resultados como desatualizados quando uma entrada muda após um cálculo.
+// Enquanto estiverem desatualizados, a impressão fica bloqueada para evitar
+// gerar um documento com números que já não correspondem ao formulário.
 function marcarDesatualizado() {
   if (temResultado) {
     resultadoSection.classList.add('stale');
+    imprimirBtn.disabled = true;
+    imprimirBtn.title = 'Os dados mudaram. Recalcule antes de imprimir.';
   }
 }
 
@@ -194,6 +198,8 @@ function calcularSimulacao() {
   // Resultados agora refletem as entradas atuais.
   temResultado = true;
   resultadoSection.classList.remove('stale');
+  imprimirBtn.disabled = false;
+  imprimirBtn.title = '';
 }
 
 function renderInitialState() {
@@ -210,7 +216,11 @@ function renderInitialState() {
 }
 
 calcularBtn.addEventListener('click', calcularSimulacao);
-imprimirBtn.addEventListener('click', () => window.print());
+imprimirBtn.addEventListener('click', () => {
+  // Só imprime resultados calculados e atualizados.
+  if (!temResultado || resultadoSection.classList.contains('stale')) return;
+  window.print();
+});
 moedaSelect.addEventListener('change', atualizarTaxaPadrao);
 prazoSelect.addEventListener('change', atualizarTaxaPadrao);
 tipoJurosSelect.addEventListener('change', atualizarVisibilidadeTaxa);
