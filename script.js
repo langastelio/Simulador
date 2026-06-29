@@ -23,6 +23,8 @@ const erroCapital = document.getElementById('erroCapital');
 const erroTaxaPadrao = document.getElementById('erroTaxaPadrao');
 const erroTaxaNegociada = document.getElementById('erroTaxaNegociada');
 const resultadoSection = document.getElementById('passo2');
+const printData = document.getElementById('printData');
+const printRef = document.getElementById('printRef');
 
 // Indica se o painel de resultados reflete uma simulação já calculada.
 let temResultado = false;
@@ -50,6 +52,21 @@ function formatValue(value, currency) {
 
 function getTaxa(moeda, prazo) {
   return taxaPorMoeda[moeda]?.[prazo] ?? 0;
+}
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+// Data/hora da geração, no formato dd/mm/aaaa hh:mm.
+function formatarDataHora(d) {
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ` +
+         `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+// Referência rastreável da simulação: SIM-AAAAMMDD-HHMMSS.
+function gerarReferencia(d) {
+  const data = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`;
+  const hora = `${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+  return `SIM-${data}-${hora}`;
 }
 
 // Mostra/limpa uma mensagem inline sob um campo.
@@ -194,6 +211,11 @@ function calcularSimulacao() {
   resImposto.textContent = formatValue(totalImposto, moeda);
   resJurosLiquido.textContent = formatValue(totalLiquido, moeda);
   resMontante.textContent = formatValue(montanteFinal, moeda);
+
+  // Carimba a data e a referência da simulação para o documento impresso.
+  const agora = new Date();
+  printData.textContent = formatarDataHora(agora);
+  printRef.textContent = gerarReferencia(agora);
 
   // Resultados agora refletem as entradas atuais.
   temResultado = true;

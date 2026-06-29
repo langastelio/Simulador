@@ -151,7 +151,7 @@ select {
 
 .print-header {
   display: none;
-  justify-content: start;
+  justify-content: space-between;
   align-items: center;
   gap: 20px;
   margin-bottom: 20px;
@@ -160,6 +160,23 @@ select {
   color: #ffffff;
   border-bottom: 1px solid #0041a8;
   border-radius: 12px;
+}
+
+.print-brand {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.print-meta {
+  text-align: right;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.print-meta-label {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .print-header img {
