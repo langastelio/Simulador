@@ -344,6 +344,28 @@ tr:hover td {
   transition: all 0.3s ease;
 }
 
+.stale-note {
+  display: none;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #8a6d00;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.resultado-section.stale .stale-note {
+  display: block;
+}
+
+.resultado-section.stale .summary,
+.resultado-section.stale table {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
 .button-group {
   display: flex;
   gap: 12px;
@@ -402,6 +424,14 @@ tr:hover td {
   .form-group,
   .button-group {
     display: none !important;
+  }
+  /* O estado "desatualizado" é apenas uma dica de ecrã: nunca afeta a impressão. */
+  .stale-note {
+    display: none !important;
+  }
+  .resultado-section.stale .summary,
+  .resultado-section.stale table {
+    opacity: 1 !important;
   }
   main {
     box-shadow: none;

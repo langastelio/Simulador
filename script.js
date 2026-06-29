@@ -22,6 +22,10 @@ const taxaPadraoDisplay = document.getElementById('taxaPadrao');
 const erroCapital = document.getElementById('erroCapital');
 const erroTaxaPadrao = document.getElementById('erroTaxaPadrao');
 const erroTaxaNegociada = document.getElementById('erroTaxaNegociada');
+const resultadoSection = document.getElementById('passo2');
+
+// Indica se o painel de resultados reflete uma simulação já calculada.
+let temResultado = false;
 
 
 const IRPS = 0.10;
@@ -62,6 +66,13 @@ function limparMensagens() {
   setFieldMessage(erroCapital, capitalInput, '', '');
   setFieldMessage(erroTaxaPadrao, null, '', '');
   setFieldMessage(erroTaxaNegociada, taxaNegociadaInput, '', '');
+}
+
+// Marca os resultados como desatualizados quando uma entrada muda após um cálculo.
+function marcarDesatualizado() {
+  if (temResultado) {
+    resultadoSection.classList.add('stale');
+  }
 }
 
 function atualizarVisibilidadeTaxa() {
@@ -179,6 +190,10 @@ function calcularSimulacao() {
   resImposto.textContent = formatValue(totalImposto, moeda);
   resJurosLiquido.textContent = formatValue(totalLiquido, moeda);
   resMontante.textContent = formatValue(montanteFinal, moeda);
+
+  // Resultados agora refletem as entradas atuais.
+  temResultado = true;
+  resultadoSection.classList.remove('stale');
 }
 
 function renderInitialState() {
@@ -202,5 +217,12 @@ tipoJurosSelect.addEventListener('change', atualizarVisibilidadeTaxa);
 // Limpa a mensagem do campo assim que o utilizador corrige o valor.
 capitalInput.addEventListener('input', () => setFieldMessage(erroCapital, capitalInput, '', ''));
 taxaNegociadaInput.addEventListener('input', () => setFieldMessage(erroTaxaNegociada, taxaNegociadaInput, '', ''));
+
+// Qualquer alteração às entradas marca os resultados existentes como desatualizados.
+[capitalInput, moedaSelect, prazoSelect, tipoJurosSelect, taxaNegociadaInput, reutilizarJurosCheckbox]
+  .forEach((el) => {
+    el.addEventListener('input', marcarDesatualizado);
+    el.addEventListener('change', marcarDesatualizado);
+  });
 
 renderInitialState();
