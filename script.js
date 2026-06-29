@@ -19,6 +19,9 @@ const resMontante = document.getElementById('resMontante');
 const campoPadraoContainer = document.getElementById('campoPadraoContainer');
 const campoNegociadoContainer = document.getElementById('campoNegociadoContainer');
 const taxaPadraoDisplay = document.getElementById('taxaPadrao');
+const erroCapital = document.getElementById('erroCapital');
+const erroTaxaPadrao = document.getElementById('erroTaxaPadrao');
+const erroTaxaNegociada = document.getElementById('erroTaxaNegociada');
 
 
 const IRPS = 0.10;
@@ -45,7 +48,24 @@ function getTaxa(moeda, prazo) {
   return taxaPorMoeda[moeda]?.[prazo] ?? 0;
 }
 
+// Mostra/limpa uma mensagem inline sob um campo.
+// tipo: 'erro' (bloqueia), 'aviso' (apenas alerta) ou '' (limpa).
+function setFieldMessage(msgEl, inputEl, message, tipo) {
+  msgEl.textContent = message || '';
+  msgEl.className = 'field-msg' + (message ? ` field-${tipo}` : '');
+  if (inputEl) {
+    inputEl.classList.toggle('input-invalid', tipo === 'erro' && Boolean(message));
+  }
+}
+
+function limparMensagens() {
+  setFieldMessage(erroCapital, capitalInput, '', '');
+  setFieldMessage(erroTaxaPadrao, null, '', '');
+  setFieldMessage(erroTaxaNegociada, taxaNegociadaInput, '', '');
+}
+
 function atualizarVisibilidadeTaxa() {
+  limparMensagens();
   const tipoJuros = tipoJurosSelect.value;
   if (tipoJuros === 'padrao') {
     campoPadraoContainer.style.display = 'block';
@@ -75,26 +95,36 @@ function calcularSimulacao() {
     ? getTaxa(moeda, prazo)
     : Number(taxaNegociadaInput.value) || 0;
 
-  if (capital <= 0 || prazo <= 0 || taxa <= 0) {
-    alert('Informe valores válidos para capital, prazo e taxa.');
-    return;
+  limparMensagens();
+  let valido = true;
+  // Elemento de mensagem da taxa conforme o modo selecionado.
+  const erroTaxaEl = tipoJuros === 'negociado' ? erroTaxaNegociada : erroTaxaPadrao;
+  const taxaInputEl = tipoJuros === 'negociado' ? taxaNegociadaInput : null;
+
+  if (capital <= 0) {
+    setFieldMessage(erroCapital, capitalInput, 'Informe um capital inicial maior que zero.', 'erro');
+    valido = false;
   }
 
-  if (tipoJuros === 'negociado') {
-    if (taxa > TAXA_NEGOCIADA_MAX) {
-      alert(
-        `A taxa negociada de ${taxa.toFixed(2)}% parece inválida. ` +
-        `Indique uma taxa anual até ${TAXA_NEGOCIADA_MAX}%.`
-      );
-      return;
-    }
-    if (taxa > TAXA_NEGOCIADA_ALERTA) {
-      const confirmar = confirm(
-        `A taxa negociada de ${taxa.toFixed(2)}% é invulgarmente elevada. ` +
-        `Confirma que está correta?`
-      );
-      if (!confirmar) return;
-    }
+  if (taxa <= 0) {
+    setFieldMessage(erroTaxaEl, taxaInputEl, 'A taxa de juros deve ser maior que zero.', 'erro');
+    valido = false;
+  } else if (tipoJuros === 'negociado' && taxa > TAXA_NEGOCIADA_MAX) {
+    setFieldMessage(
+      erroTaxaNegociada, taxaNegociadaInput,
+      `Taxa inválida. Indique uma taxa anual até ${TAXA_NEGOCIADA_MAX}%.`, 'erro'
+    );
+    valido = false;
+  }
+
+  if (!valido) return;
+
+  // Aviso não bloqueante: taxa elevada mas plausível.
+  if (tipoJuros === 'negociado' && taxa > TAXA_NEGOCIADA_ALERTA) {
+    setFieldMessage(
+      erroTaxaNegociada, taxaNegociadaInput,
+      `Taxa invulgarmente elevada (${taxa.toFixed(2)}%). Verifique se está correta.`, 'aviso'
+    );
   }
 
   const reutilizar = reutilizarJurosCheckbox.checked;
@@ -169,5 +199,8 @@ imprimirBtn.addEventListener('click', () => window.print());
 moedaSelect.addEventListener('change', atualizarTaxaPadrao);
 prazoSelect.addEventListener('change', atualizarTaxaPadrao);
 tipoJurosSelect.addEventListener('change', atualizarVisibilidadeTaxa);
+// Limpa a mensagem do campo assim que o utilizador corrige o valor.
+capitalInput.addEventListener('input', () => setFieldMessage(erroCapital, capitalInput, '', ''));
+taxaNegociadaInput.addEventListener('input', () => setFieldMessage(erroTaxaNegociada, taxaNegociadaInput, '', ''));
 
 renderInitialState();
